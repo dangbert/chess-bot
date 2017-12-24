@@ -57,13 +57,26 @@ class Type(Enum):
     KING   = 5
 
 # represents a position on the board
+# TODO: replace this with pairs (x, y) ???
+# or remove pairs and use this instead
+# use this class from the run.py as well
+# just make a function to represent it in the chess format
 class Pos:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    def __init__(self, x, y=None):
+        if y != None:
+            self.x = x
+            self.y = y
+        else:
+            # initialize using a chess format string (e.g. "a2")
+            self.x = ord(x[0]) - ord('a')
+            self.y = int(x[1]) - 1
 
+    # print Pos objects as chess format strings (e.g. "a2")
     def __repr__(self):
-        x = chr(ord('a') + self.x)
-        y = self.y + 1
-        #return Board.chessFormat(self.x, self.y)
-        return "(" + str(self.x) + "," + str(self.y) + ")"
+        return chr(ord('a') + self.x) + str(self.y+1)
+
+    # equality operator
+    def __eq__(self, other):
+        if isinstance(self, other.__class__):
+            return self.__dict__ == other.__dict__
+        return False

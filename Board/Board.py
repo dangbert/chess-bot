@@ -49,21 +49,10 @@ class Board:
         name += "\n      Turn: " + ("white\n" if self._turn == Team.WHITE else "black\n")
         return name
 
-    # convert a numerical coordinate to a string representing it
-    @staticmethod
-    def chessFormat(x, y):
-        return chr(ord('a') + x) + str(y+1)
-
-    # convert a chess coordinate to a numerical coordinate
-    @staticmethod
-    def compFormat(p):
-        x = ord(p[0]) - ord('a')
-        y = int(p[1]) - 1
-        return (x, y)
-
     # returns true if the (current) player is in check
-    def inCheck(self):
-        pass
+    # or would be in check if the given move is made
+    def _inCheck(self, pos0, pos1):
+        return False # TODO: implement
 
     # return true if a given position is on the board
     def isValidIndex(self, x, y):
@@ -76,13 +65,10 @@ class Board:
     # return a list of positions that the piece
     # at the given position is allowed to move to
     # (taking check into account)
-    def getMoves(self, loc):
-        loc = self.compFormat(loc)
-        x = loc[0]
-        y = loc[1]
-        print("translated to (" + str(x) + "," + str(y) + ")")
-        # TODO: fix issues with checking if a spot is not None
-        pos0 = Pos(x, y)
+    # TODO: allow loc to be a string or pair of points
+    def getMoves(self, pos0):
+        x = pos0.x
+        y = pos0.y
         moves = []
         piece = self._arr[x][y]
         if piece == None or self._turn != piece.getTeam():
@@ -135,18 +121,16 @@ class Board:
                     self._addMove(moves, pos0, Pos(x+p[0], y+p[1]))
         return moves
 
-    # add a move to the list if it's valid
+    # add a move to a provided list if it's valid
     # (assumes provided indices are valid)
     def _addMove(self, moves, pos0, pos1):
-        moves.append(pos1)
-        # TODO: check if the king will be in check if the poice moves here
-        # else add the move to the list
-        #if self._isValidMove(pos0, pos1):
+        if not self._inCheck(pos0, pos1):
+            moves.append(pos1)
 
     # return true if moving the piece from (x0, y0) -> (x1, y1) is valid
-    # (assumes that the given move would be valid if obstacles in between and check are disregarded)???
-    def _isValidMove(self, pos0, pos1):
-        # TODO: consider just calling my getMoves() and check that the provided index is in that list
-
-        # check that resulting board wouldn't put you in check
-        pass
+    # (assumes that the given move would be valid if obstacles in between and check are disregarded)
+    def isValidMove(self, pos0, pos1):
+        moves = self.getMoves(pos0)             # list of Pos objects
+        if pos1 not in moves:
+            return False
+        return True
