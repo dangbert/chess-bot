@@ -71,6 +71,10 @@ class Pos:
             self.x = ord(x[0]) - ord('a')
             self.y = int(x[1]) - 1
 
+    # return true if this position is on the board
+    def isValid(self):
+        return 0 <= self.x and self.x <= 7 and 0 <= self.y and self.y <= 7
+
     # print Pos objects as chess format strings (e.g. "a2")
     def __repr__(self):
         return chr(ord('a') + self.x) + str(self.y+1)

@@ -14,26 +14,26 @@ class Board:
         self._bCastle = True                    # black can still castle
         # set pawns
         for x in range(8):
-            self._set(x, 1, Piece(Team.WHITE, Type.PAWN))
-            self._set(x, 6, Piece(Team.BLACK, Type.PAWN))
+            self._set(Pos(x,1), Piece(Team.WHITE, Type.PAWN))
+            self._set(Pos(x,6), Piece(Team.BLACK, Type.PAWN))
         # set rest of pieces
         for y in [0, 7]:
-            self._set(0, y, Piece(Team.BLACK if y else Team.WHITE, Type.ROOK))
-            self._set(1, y, Piece(Team.BLACK if y else Team.WHITE, Type.KNIGHT))
-            self._set(2, y, Piece(Team.BLACK if y else Team.WHITE, Type.BISHOP))
-            self._set(3, y, Piece(Team.BLACK if y else Team.WHITE, Type.QUEEN))
-            self._set(4, y, Piece(Team.BLACK if y else Team.WHITE, Type.KING))
-            self._set(5, y, Piece(Team.BLACK if y else Team.WHITE, Type.BISHOP))
-            self._set(6, y, Piece(Team.BLACK if y else Team.WHITE, Type.KNIGHT))
-            self._set(7, y, Piece(Team.BLACK if y else Team.WHITE, Type.ROOK))
+            self._set(Pos(0,y), Piece(Team.BLACK if y else Team.WHITE, Type.ROOK))
+            self._set(Pos(1,y), Piece(Team.BLACK if y else Team.WHITE, Type.KNIGHT))
+            self._set(Pos(2,y), Piece(Team.BLACK if y else Team.WHITE, Type.BISHOP))
+            self._set(Pos(3,y), Piece(Team.BLACK if y else Team.WHITE, Type.QUEEN))
+            self._set(Pos(4,y), Piece(Team.BLACK if y else Team.WHITE, Type.KING))
+            self._set(Pos(5,y), Piece(Team.BLACK if y else Team.WHITE, Type.BISHOP))
+            self._set(Pos(6,y), Piece(Team.BLACK if y else Team.WHITE, Type.KNIGHT))
+            self._set(Pos(7,y), Piece(Team.BLACK if y else Team.WHITE, Type.ROOK))
 
-    # sets the desired square to the given Piece (object)
-    def _set(self, x, y, piece):
-        self._arr[x][y] = piece 
+    # sets the desired position to the given Piece (object)
+    def _set(self, p, piece):
+        self._arr[p.x][p.y] = piece 
 
     # returns the piece in a given spot on the board (None if spot is empty)
-    def _get(self, x, y):
-        return self._arr[x][y]
+    def _get(self, p):
+        return self._arr[p.x][p.y]
 
     def __repr__(self):
         name = "\t  a\t  b\t  c\t  d\t  e\t  f\t  g\t  h\t\n\n"
@@ -51,24 +51,20 @@ class Board:
 
     # returns true if the (current) player is in check
     # or would be in check if the given move is made
-    def _inCheck(self, pos0, pos1):
+    def _inCheck(self, p0, p1):
         return False # TODO: implement
 
-    # return true if a given position is on the board
-    def isValidIndex(self, x, y):
-        return 0 <= x and x <= 7 and 0 <= y and y <= 7
-
     # return true if a given position is valid and (either empty or contains an enemy piece)
-    def isValidIndexCapture(self, x, y):
-        return self.isValidIndex(x, y) and (self._arr[x][y] == None or self._arr[x][y]._team != self._turn)
+    def isValidCapture(self, p):
+        return p.isValid() and (self._arr[p.x][p.y] == None or self._arr[p.x][p.y]._team != self._turn)
 
     # return a list of positions that the piece
     # at the given position is allowed to move to
     # (taking check into account)
     # TODO: allow loc to be a string or pair of points
-    def getMoves(self, pos0):
-        x = pos0.x
-        y = pos0.y
+    def getMoves(self, p0):
+        x = p0.x
+        y = p0.y
         moves = []
         piece = self._arr[x][y]
         if piece == None or self._turn != piece.getTeam():
@@ -79,58 +75,58 @@ class Board:
             s = (1 if piece.getTeam() == Team.WHITE else -1)
             # moving 2 positions forward
             if (s == 1 and y == 1) or (s == -1 and y == 6):
-                self._addMove(moves, pos0, Pos(x, y+s*2))
+                self._addMove(moves, p0, Pos(x, y+s*2))
             # moving 1 position forward
-            self._addMove(moves, pos0, Pos(x, y+s*1))
+            self._addMove(moves, p0, Pos(x, y+s*1))
             # attacking a piece
-            if self.isValidIndex(x-1, y+s*1) and (self._arr[x-1][y+s*1] != None and self._arr[x-1][y+s*1]._team != self._turn):
-                self._addMove(moves, pos0, Pos(x-1, y+s*1))
-            if self.isValidIndex(x+1, y+s*1) and (self._arr[x+1][y+s*1] != None and self._arr[x+1][y+s*1]._team != self._turn):
-                self._addMove(moves, pos0, Pos(x+1, y+s*1))
+            if Pos(x-1, y+s*1).isValid() and (self._arr[x-1][y+s*1] != None and self._arr[x-1][y+s*1]._team != self._turn):
+                self._addMove(moves, p0, Pos(x-1, y+s*1))
+            if Pos(x+1, y+s*1).isValid() and (self._arr[x+1][y+s*1] != None and self._arr[x+1][y+s*1]._team != self._turn):
+                self._addMove(moves, p0, Pos(x+1, y+s*1))
 
         if piece.getType() == Type.KNIGHT:
-            for p in [(-2, -1), (-2, +1), (-1, -2), (-1, +2), (+2, -1), (+2, +1), (+1, -2), (+1, +2)]:
-                if self.isValidIndexCapture(x+p[0], y+p[1]):
-                    self._addMove(moves, pos0, Pos(x+p[0], y+p[1]))
+            for k in [(-2, -1), (-2, +1), (-1, -2), (-1, +2), (+2, -1), (+2, +1), (+1, -2), (+1, +2)]:
+                if self.isValidCapture(Pos(x+k[0], y+k[1])):
+                    self._addMove(moves, p0, Pos(x+k[0], y+k[1]))
 
         # (simply include the queen in the sections for the bishop and the rook)
         if piece.getType() == Type.BISHOP or piece.getType() == Type.QUEEN:
             for sx in [-1, 1]:                  # sign for x travel
                 for sy in [-1, 1]:              # sign for y travel
                     i = 1                       # magnitude of travel
-                    while self.isValidIndexCapture(x+sx*i, y+sy*i):
-                        self._addMove(moves, pos0, Pos(x+sx*i, y+sy*i))
+                    while self.isValidCapture(Pos(x+sx*i, y+sy*i)):
+                        self._addMove(moves, p0, Pos(x+sx*i, y+sy*i))
                         i += 1
 
         if piece.getType() == Type.ROOK or piece.getType() == Type.QUEEN:
             for s in [-1, 1]:                   # sign for travel direction
                 # travel column:
                 i = 1
-                while self.isValidIndexCapture(x, y+s*i):
-                    self._addMove(moves, pos0, Pos(x, y+s*i))
+                while self.isValidCapture(Pos(x, y+s*i)):
+                    self._addMove(moves, p0, Pos(x, y+s*i))
                     i += 1
                 # travel row:
                 i = 1
-                while self.isValidIndexCapture(x+s*i, y):
-                    self._addMove(moves, pos0, Pos(x+s*i, y))
+                while self.isValidCapture(Pos(x+s*i, y)):
+                    self._addMove(moves, p0, Pos(x+s*i, y))
                     i += 1
 
         if piece.getType() == Type.KING:
-            for p in [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]:
-                if self.isValidIndexCapture(x+p[0], y+p[1]):
-                    self._addMove(moves, pos0, Pos(x+p[0], y+p[1]))
+            for k in [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]:
+                if self.isValidCapture(Pos(x+k[0], y+k[1])):
+                    self._addMove(moves, p0, Pos(x+k[0], y+k[1]))
         return moves
 
     # add a move to a provided list if it's valid
     # (assumes provided indices are valid)
-    def _addMove(self, moves, pos0, pos1):
-        if not self._inCheck(pos0, pos1):
-            moves.append(pos1)
+    def _addMove(self, moves, p0, p1):
+        if not self._inCheck(p0, p1):
+            moves.append(p1)
 
     # return true if moving the piece from (x0, y0) -> (x1, y1) is valid
     # (assumes that the given move would be valid if obstacles in between and check are disregarded)
-    def isValidMove(self, pos0, pos1):
-        moves = self.getMoves(pos0)             # list of Pos objects
-        if pos1 not in moves:
+    def isValidMove(self, p0, p1):
+        moves = self.getMoves(p0)               # list of Pos objects
+        if p1 not in moves:
             return False
         return True
