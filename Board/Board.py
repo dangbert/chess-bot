@@ -12,6 +12,7 @@ class Board:
         self._turn = Team.WHITE                 # white's turn
         self._wCastle = True                    # white can still castle
         self._bCastle = True                    # black can still castle
+        self._lastMoved = None
         # set pawns
         for x in range(8):
             self._set(Pos(x,1), Piece(Team.WHITE, Type.PAWN))
@@ -71,23 +72,25 @@ class Board:
         if piece == None or self._turn != piece.getTeam():
             return [] # return empty list
 
-        # TODO: fix problem allowing pawn to attack vertically
-        # TODO: fix problem not allowing en passant
         if piece.getType() == Type.PAWN:
             # sign for direction of travel
             s = (1 if piece.getTeam() == Team.WHITE else -1)
-            # moving 2 positions forward
-            if (s == 1 and y == 1) or (s == -1 and y == 6):
-                self._addMove(moves, p0, Pos(x, y+s*2))
-            # moving 1 position forward
-            self._addMove(moves, p0, Pos(x, y+s*1))
+            # moving 1 or 2 positions forward
+            if self._arr[x][y+s*1] == None:
+                self._addMove(moves, p0, Pos(x, y+s*1))
+                if (s == 1 and y == 1) or (s == -1 and y == 6) and self._arr[x][y+s*2] == None:
+                    self._addMove(moves, p0, Pos(x, y+s*2))
             # attacking a piece
-            if Pos(x-1, y+s*1).isValid() and (self._arr[x-1][y+s*1] != None
-                    and self._arr[x-1][y+s*1]._team != self._turn):
-                self._addMove(moves, p0, Pos(x-1, y+s*1))
-            if Pos(x+1, y+s*1).isValid() and (self._arr[x+1][y+s*1] != None
-                    and self._arr[x+1][y+s*1]._team != self._turn):
-                self._addMove(moves, p0, Pos(x+1, y+s*1))
+            for k in [-1, 1]:
+                p1 = p0.off(k, s*1)
+                if p1.isValid():
+                    if p1.piece(self) != None:
+                        if not p1.piece(self).teamIs(self._turn):
+                            self._addMove(moves, p0, p1)
+                    else: # en passant
+                        piece2 = p0.off(k, 0).piece(self)
+                        if piece2 != None and piece2.typeIs(Type.PAWN) and piece2._movedTwo == True:
+                            self._addMove(moves, p0, p1)
 
         if piece.getType() == Type.KNIGHT:
             for k in [(-2, -1), (-2, +1), (-1, -2), (-1, +2), (+2, -1), (+2, +1), (+1, -2), (+1, +2)]:
@@ -131,11 +134,19 @@ class Board:
             moves.append(p1)
 
     def makeMove(self, p0, p1):
-        # TODO: consider en passent (update pawn val)
         if self.isValidMove(p0, p1):
+            if self._lastMoved != None and self._lastMoved.piece(self).typeIs(Type.PAWN):
+                self._lastMoved.piece(self)._movedTwo = False
+            if p0.piece(self).typeIs(Type.PAWN) and p1.piece(self) == None and p0.x != p1.x:
+                # remove enemy pawn if en passant is being done
+                self._set(Pos(p1.x, p0.y), None)
+
             self._set(p1, self._get(p0))
             self._set(p0, None)
             self._turn = (Team.WHITE if self._turn == Team.BLACK else Team.BLACK)
+            self._lastMoved = p1
+            if p1.piece(self).typeIs(Type.PAWN) and (p0.off(0, 2) == p1 or p0.off(0, -2) == p1):
+                self._lastMoved.piece(self)._movedTwo = True
             return True
         return False
 

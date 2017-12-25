@@ -19,6 +19,12 @@ class Piece:
     def getType(self):
         return self._type
 
+    def teamIs(self, t):
+        return self._team == t
+
+    def typeIs(self, t):
+        return self._type == t
+
     def __repr__(self):
         if self._team not in Team:
             raise ValueError("Invalid team: '" + str(self._team) + "'")
@@ -57,11 +63,8 @@ class Type(Enum):
     KING   = 5
 
 # represents a position on the board
-# TODO: replace this with pairs (x, y) ???
-# or remove pairs and use this instead
-# use this class from the run.py as well
-# just make a function to represent it in the chess format
 class Pos:
+    # initialize with either 2 indices or one chess format string
     def __init__(self, x, y=None):
         if y != None:
             self.x = x
@@ -74,6 +77,15 @@ class Pos:
     # return true if this position is on the board
     def isValid(self):
         return 0 <= self.x and self.x <= 7 and 0 <= self.y and self.y <= 7
+
+    # return a Pos with the given offset from this one
+    def off(self, x, y):
+        return Pos(self.x + x, self.y + y)
+
+    # return the piece at this pos in the board
+    # (assumes this pos is valid)
+    def piece(self, board):
+        return board._get(self)
 
     # print Pos objects as chess format strings (e.g. "a2")
     def __repr__(self):
