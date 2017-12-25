@@ -36,15 +36,17 @@ class Board:
         return self._arr[p.x][p.y]
 
     def __repr__(self):
-        name = "\t  a\t  b\t  c\t  d\t  e\t  f\t  g\t  h\t\n\n"
+        count = 0
+        name = "\t  a    b    c    d    e    f    g    h\n\n"
         for y in range(7, -1, -1):
+            count += 1
             name += "      " + str(y + 1) + "\t"
             for x in range(8):
+                count += 1
                 if self._arr[x][y] != None:
                     name += str(self._arr[x][y])
                 else:
-                    name += "  -  "
-                name += "\t"
+                    name += ("  ~  " if count % 2 == 0 else "  -  ")
             name += "\n"
         name += "\n      Turn: " + ("white\n" if self._turn == Team.WHITE else "black\n")
         return name
