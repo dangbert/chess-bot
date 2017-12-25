@@ -94,37 +94,48 @@ class Board:
 
         if piece.getType() == Type.KNIGHT:
             for k in [(-2, -1), (-2, +1), (-1, -2), (-1, +2), (+2, -1), (+2, +1), (+1, -2), (+1, +2)]:
-                if self.isValidCapture(Pos(x+k[0], y+k[1])):
-                    self._addMove(moves, p0, Pos(x+k[0], y+k[1]))
+                p1 = p0.off(k[0], k[1])
+                if self.isValidCapture(p1):
+                    self._addMove(moves, p0, p1)
+
 
         # (simply include the queen in the sections for the bishop and the rook)
-        # TODO: fix bug where it lets you move diagonally past an enemy piece
         if piece.getType() == Type.BISHOP or piece.getType() == Type.QUEEN:
             for sx in [-1, 1]:                  # sign for x travel
                 for sy in [-1, 1]:              # sign for y travel
                     i = 1                       # magnitude of travel
-                    while self.isValidCapture(Pos(x+sx*i, y+sy*i)):
-                        self._addMove(moves, p0, Pos(x+sx*i, y+sy*i))
+                    while self.isValidCapture(p0.off(sx*i, sy*i)):
+                        self._addMove(moves, p0, p0.off(sx*i, sy*i))
+                        if p0.off(sx*i, sy*i).piece(self) != None:
+                            break               # stop after we reach an enemy piece
                         i += 1
 
-        # TODO: fix problem allowing a rook to move past an enemy piece
+        # TODO: consider replacing isValidCapture()
+        #       with a (bigger) function that can be used by the BISHOP and ROOK sections
+        #       (perhaps pass the function the pattern that's being used?)
         if piece.getType() == Type.ROOK or piece.getType() == Type.QUEEN:
             for s in [-1, 1]:                   # sign for travel direction
                 # travel column:
                 i = 1
-                while self.isValidCapture(Pos(x, y+s*i)):
-                    self._addMove(moves, p0, Pos(x, y+s*i))
+                while self.isValidCapture(p0.off(0, s*i)):
+                    self._addMove(moves, p0, p0.off(0, s*i))
+                    if p0.off(0, s*i).piece(self) != None:
+                        break                   # stop after we reach an enemy piece
                     i += 1
                 # travel row:
                 i = 1
-                while self.isValidCapture(Pos(x+s*i, y)):
-                    self._addMove(moves, p0, Pos(x+s*i, y))
+                while self.isValidCapture(p0.off(s*i, 0)):
+                    self._addMove(moves, p0, p0.off(s*i, 0))
+                    if p0.off(s*i, 0).piece(self) != None:
+                        break                   # stop after we reach an enemy piece
                     i += 1
 
+        # TODO: take castling into account
         if piece.getType() == Type.KING:
             for k in [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]:
-                if self.isValidCapture(Pos(x+k[0], y+k[1])):
-                    self._addMove(moves, p0, Pos(x+k[0], y+k[1]))
+                p1 = p0.off(k[0], k[1])
+                if self.isValidCapture(p1):
+                    self._addMove(moves, p0, p1)
         return moves
 
     # add a move to a provided list if it's valid
