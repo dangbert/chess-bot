@@ -61,7 +61,6 @@ class Board:
     # return a list of positions that the piece
     # at the given position is allowed to move to
     # (taking check into account)
-    # TODO: allow loc to be a string or pair of points
     def getMoves(self, p0):
         x = p0.x
         y = p0.y
@@ -70,6 +69,8 @@ class Board:
         if piece == None or self._turn != piece.getTeam():
             return [] # return empty list
 
+        # TODO: fix problem allowing pawn to attack vertically
+        # TODO: fix problem not allowing en passant
         if piece.getType() == Type.PAWN:
             # sign for direction of travel
             s = (1 if piece.getTeam() == Team.WHITE else -1)
@@ -79,9 +80,11 @@ class Board:
             # moving 1 position forward
             self._addMove(moves, p0, Pos(x, y+s*1))
             # attacking a piece
-            if Pos(x-1, y+s*1).isValid() and (self._arr[x-1][y+s*1] != None and self._arr[x-1][y+s*1]._team != self._turn):
+            if Pos(x-1, y+s*1).isValid() and (self._arr[x-1][y+s*1] != None
+                    and self._arr[x-1][y+s*1]._team != self._turn):
                 self._addMove(moves, p0, Pos(x-1, y+s*1))
-            if Pos(x+1, y+s*1).isValid() and (self._arr[x+1][y+s*1] != None and self._arr[x+1][y+s*1]._team != self._turn):
+            if Pos(x+1, y+s*1).isValid() and (self._arr[x+1][y+s*1] != None
+                    and self._arr[x+1][y+s*1]._team != self._turn):
                 self._addMove(moves, p0, Pos(x+1, y+s*1))
 
         if piece.getType() == Type.KNIGHT:
@@ -90,6 +93,7 @@ class Board:
                     self._addMove(moves, p0, Pos(x+k[0], y+k[1]))
 
         # (simply include the queen in the sections for the bishop and the rook)
+        # TODO: fix bug where it lets you move diagonally past an enemy piece
         if piece.getType() == Type.BISHOP or piece.getType() == Type.QUEEN:
             for sx in [-1, 1]:                  # sign for x travel
                 for sy in [-1, 1]:              # sign for y travel
@@ -98,6 +102,7 @@ class Board:
                         self._addMove(moves, p0, Pos(x+sx*i, y+sy*i))
                         i += 1
 
+        # TODO: fix problem allowing a rook to move past an enemy piece
         if piece.getType() == Type.ROOK or piece.getType() == Type.QUEEN:
             for s in [-1, 1]:                   # sign for travel direction
                 # travel column:
@@ -122,6 +127,15 @@ class Board:
     def _addMove(self, moves, p0, p1):
         if not self._inCheck(p0, p1):
             moves.append(p1)
+
+    def makeMove(self, p0, p1):
+        # TODO: consider en passent (update pawn val)
+        if self.isValidMove(p0, p1):
+            self._set(p1, self._get(p0))
+            self._set(p0, None)
+            self._turn = (Team.WHITE if self._turn == Team.BLACK else Team.BLACK)
+            return True
+        return False
 
     # return true if moving the piece from (x0, y0) -> (x1, y1) is valid
     # (assumes that the given move would be valid if obstacles in between and check are disregarded)

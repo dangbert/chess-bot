@@ -15,8 +15,9 @@ def main():
             continue
 
         dest = getLoc("dest: ")                 # end location
-        if board.isValidMove(loc, dest):
-            print("valid move")
+        # make the move
+        if board.makeMove(loc, dest):
+            print(board)
         else:
             print("invalid move")
 
