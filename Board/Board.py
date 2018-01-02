@@ -52,8 +52,8 @@ class Board:
         name += "\n      Turn: " + ("white\n" if self._turn == Team.WHITE else "black\n")
         return name
 
-    # returns true if the (current) player is in check
-    # or would be in check if the given move is made
+    # returns true if the (current) player would
+    # be in check if the given move is made
     def _inCheck(self, p0, p1):
         return False # TODO: implement
 
@@ -91,13 +91,13 @@ class Board:
                         piece2 = p0.off(k, 0).piece(self)
                         if piece2 != None and piece2.typeIs(Type.PAWN) and piece2._movedTwo == True:
                             self._addMove(moves, p0, p1)
+            # TODO: handle pawn promotion
 
         if piece.getType() == Type.KNIGHT:
             for k in [(-2, -1), (-2, +1), (-1, -2), (-1, +2), (+2, -1), (+2, +1), (+1, -2), (+1, +2)]:
                 p1 = p0.off(k[0], k[1])
                 if self.isValidCapture(p1):
                     self._addMove(moves, p0, p1)
-
 
         # (simply include the queen in the sections for the bishop and the rook)
         if piece.getType() == Type.BISHOP or piece.getType() == Type.QUEEN:
@@ -110,32 +110,55 @@ class Board:
                             break               # stop after we reach an enemy piece
                         i += 1
 
-        # TODO: consider replacing isValidCapture()
-        #       with a (bigger) function that can be used by the BISHOP and ROOK sections
-        #       (perhaps pass the function the pattern that's being used?)
         if piece.getType() == Type.ROOK or piece.getType() == Type.QUEEN:
             for s in [-1, 1]:                   # sign for travel direction
-                # travel column:
-                i = 1
-                while self.isValidCapture(p0.off(0, s*i)):
-                    self._addMove(moves, p0, p0.off(0, s*i))
-                    if p0.off(0, s*i).piece(self) != None:
-                        break                   # stop after we reach an enemy piece
-                    i += 1
-                # travel row:
-                i = 1
-                while self.isValidCapture(p0.off(s*i, 0)):
-                    self._addMove(moves, p0, p0.off(s*i, 0))
-                    if p0.off(s*i, 0).piece(self) != None:
-                        break                   # stop after we reach an enemy piece
-                    i += 1
+                for c in [(0,1), (1,0)]:        # travel column, then row:
+                    i = 1
+                    # TODO: fix infinite loop here due to p1 not being updated
+                    p1 = p0.off(c[0]*s*i, c[1]*s*i)
+                    while self.isValidCapture(p1):
+                        self._addMove(moves, p0, p1)
+                        if p1.piece(self) != None:
+                            break               # stop after we reach an enemy piece
+                        i += 1
+                        p1 = p0.off(c[0]*s*i, c[1]*s*i) # TODO: try this and for bishop as well
 
-        # TODO: take castling into account
+        # TODO: handle castling on the right
         if piece.getType() == Type.KING:
             for k in [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]:
                 p1 = p0.off(k[0], k[1])
                 if self.isValidCapture(p1):
                     self._addMove(moves, p0, p1)
+
+            #s = (1 if piece.getTeam() == Team.WHITE else -1)
+            if piece._moved == False:           # king is in original position
+                p1 = p0.off(-4, 0)
+                piece1 = p1.piece(self)         # left side corner
+                p2 = p0.off(3, 0)
+                piece2 = p2.piece(self)         # right side corner
+                king = p0                       # current location of king
+                if piece1 != None and piece1.typeIs(Type.ROOK) and piece1._moved == False:
+
+                    castle = False
+                    for i in range(1, 4):       # x offsets
+                        pt = king.off(-1*i, 0)  # temp position for king
+                        if pt.piece(self) != None:
+                            break
+                        if 2 <= pt.x:
+                            # move king to this position and check that it's not in check
+                            if self._inCheck(king, pt):
+                                break
+                            self._set(pt, king.piece(self))
+                            king = pt
+                        elif pt.x == 1:
+                            castle = True
+                            # castle this way is valid
+                    # reset to original position
+                    if king != p0:
+                        self._set(p0, king.piece(self))
+                        self._set(king, None)
+                    if castle:
+                        self._addMove(moves, p0, p0.off(-2, 0))
         return moves
 
     # add a move to a provided list if it's valid
@@ -152,8 +175,21 @@ class Board:
                 # remove enemy pawn if en passant is being done
                 self._set(Pos(p1.x, p0.y), None)
 
+            if p0.piece(self).typeIs(Type.KING) or p0.piece(self).typeIs(Type.ROOK):
+                p0.piece(self)._moved = True
+
+            # handle castling
+            # TODO: get this to work with right castling as well
+            if p0.piece(self).typeIs(Type.KING) and abs(p0.x - p1.x) == 2:
+                print("flag1")
+                rook = Pos(0, p0.y)
+                print("moving rook (" + str(rook.piece(self)) + "(to " + str(rook.off(2,0).x) + ", " + str(rook.off(2,0).y))
+                self._set(rook.off(p1.x + 1, 0), rook.piece(self))
+                self._set(rook, None)
+
             self._set(p1, self._get(p0))
             self._set(p0, None)
+
             self._turn = (Team.WHITE if self._turn == Team.BLACK else Team.BLACK)
             self._lastMoved = p1
             if p1.piece(self).typeIs(Type.PAWN) and (p0.off(0, 2) == p1 or p0.off(0, -2) == p1):
